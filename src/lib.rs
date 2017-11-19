@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "benchmark", feature(test))]
+
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0>.
 // This file may not be copied, modified, or distributed
@@ -5,6 +7,7 @@
 
 //! Solar Position Algorithm module for Rust
 //!
+//! Collection of algorithms calculating sunrise/sunset and azimuth/zenith-angle.
 
 extern crate chrono;
 
@@ -21,32 +24,48 @@ const EARTH_MEAN_RADIUS: f64 = 6371.01; // In km
 const ASTRONOMICAL_UNIT: f64 = 149597890.0; // In km
 const JD2000: f64 = 2451545.0;
 
-// Sun-rise and sun-set as UTC, otherwise permanent polar-night or polar-day
+/// The sun-rise and sun-set as UTC, otherwise permanent polar-night or polar-day
 #[derive(Debug, Clone)]
 pub enum SunriseAndSet {
+    /// The polar night occurs in the northernmost and southernmost regions of the Earth when
+    /// the night lasts for more than 24 hours. This occurs only inside the polar circles.
     PolarNight,
+    /// The polar day occurs when the Sun stays above the horizon for more than 24 hours.
+    /// This occurs only inside the polar circles.
     PolarDay,
+    /// The sunrise and sunset as UTC, the Coordinated Universal Time (offset +00:00), incl.
+    /// leap-seconds.
+    ///
+    /// These UTC time-points can be transformed to local times based on longitude or the
+    /// corresponding timezone. As timezones are corresponding to borders of countries, a map
+    /// would be required.
     Daylight(DateTime<Utc>, DateTime<Utc>),
-    // Sunrise and Sunset as SystemTimes(Utc)
 }
 
-// Solar position and sun-rise, sun-set
+/// The solar position
 #[derive(Debug, Clone)]
 pub struct SolarPos {
+    /// horizontal angle measured clockwise from a north base line or meridian
     azimuth: f64,
+    /// the angle between the zenith and the centre of the sun's disc
     zenith_angle: f64,
 }
 
-// The error conditions
+/// The error conditions
 #[derive(Debug, Clone)]
 pub enum SpaError {
     BadParam,
 }
 
-// Convert DateTime<Utc> to Julian-Days
-//
-// Julian-Days is the number of days (incl. fraction) since January 1, 4713 BC, _noon_, without the
-// leap seconds.
+/// Converting DateTime<Utc> to Julian-Days (f64)
+///
+/// Julian-Days is the number of days (incl. fraction) since January 1, 4713 BC, noon, without the
+/// leap seconds.
+///
+/// # Arguments
+///
+/// * `utc` - UTC time point
+///
 fn to_julian(utc: DateTime<Utc>) -> f64
 {
     let systime: SystemTime = utc.into();
@@ -59,10 +78,15 @@ fn to_julian(utc: DateTime<Utc>) -> f64
         + 2440587.5
 }
 
-// Convert Julian-Days to DateTime<Utc>
-//
-// Julian-Days is the number of days (incl. fraction) since January 1, 4713 BC, _noon_, without the
-// leap seconds.
+/// Convert Julian-Days to UTC time-point
+///
+/// Julian-Days is the number of days (incl. fraction) since January 1, 4713 BC, noon, without the
+/// leap seconds.
+///
+/// # Arguments
+///
+/// * `jd` - Julian days since January 1, 4713 BC noon (12:00)
+///
 fn to_utc(jd: f64) -> DateTime<Utc>
 {
     let secs_since_epoch = (jd - 2440587.5) * 86400.0;
@@ -71,7 +95,11 @@ fn to_utc(jd: f64) -> DateTime<Utc>
     Utc.timestamp(secs as i64, nanos as u32)
 }
 
-//
+/// Projecting value into range [0,..,PI]
+///
+/// # Arguments
+///
+/// * `x` - radiant, not normalized to range [-PI..PI]
 fn in_pi(x: f64) -> f64
 {
     let n = (x / PI2) as i64;
@@ -79,15 +107,24 @@ fn in_pi(x: f64) -> f64
     if result < 0.0 { (result + PI2) } else { result }
 }
 
-//
-fn eps(t: f64) -> f64 // Neigung der Erdachse
+/// Returns the eccentricity of earth ellipse
+///
+/// # Arguments
+///
+/// * `t` - time according to standard equinox J2000.0
+///
+fn eps(t: f64) -> f64
 {
     return RAD * (23.43929111
         + ((-46.8150) * t - 0.00059 * t * t + 0.001813 * t * t * t) / 3600.0);
 }
 
 
-// Equation of Time returning tuple (detla_ra, declination)
+/// Calculates equation of time, returning the tuple (delta-ascension, declination)
+///
+/// # Arguments
+///
+/// * `t` - time according to standard equinox J2000.0
 fn berechne_zeitgleichung(t: f64) -> (f64, f64)
 {
     let mut ra_mittel = 18.71506921
@@ -119,19 +156,28 @@ fn berechne_zeitgleichung(t: f64) -> (f64, f64)
     return (d_ra, dk);
 }
 
-// Calculate Sunrise and Sunset at geo-position at UTC, or PolarNight/Day.
-//
-// utc: DateTime<Utc>
-// lat: latitude in degrees
-// lon: longitude in degrees
-//
-// North of ca 67.4 degree and south of ca -67.4 it may be permanent night or day. In this
-// case result is PolarNight or PolarDay.
-//
-// Algorithm ported to Rust from  http://lexikon.astronomie.info/zeitgleichung/neu.html
+/// Returning Sunrise and Sunset (or PolarNight/PolarDay) at geo-pos `lat/lon` at time `t` (UTC)
+///
+/// # Arguments
+///
+/// * `utc` - UTC time-point (DateTime<Utc>)
+/// * `lat` - latitude in WGS84 system, ranging from -90.0 to 90.0.
+/// * `lon` - longitude in WGS84 system, ranging from -180.0 to 180.0
+///
+/// North of ca 67.4 degree and south of ca -67.4 it may be permanent night or day. In this
+/// case may be SunriseAndSet::PolarNight or SunriseAndSet::PolarDay.
+///
+/// In case latitude or longitude are not in valid ranges, the function will return Err(BadParam).
+///
+/// Algorithm ported to Rust from  http://lexikon.astronomie.info/zeitgleichung/neu.html
+/// Its accuracy is in the range of a few minutes.
 pub fn calc_sunrise_and_set(utc: DateTime<Utc>, lat: f64, lon: f64)
                             -> Result<SunriseAndSet, SpaError>
 {
+    if -90.0 > lat || 90.0 < lat || -180.0 > lon || 180.0 < lon {
+        return Err(SpaError::BadParam);
+    }
+
     let jd = to_julian(utc);
     let t = (jd - JD2000) / 36525.0;
     let h = -50.0 / 60.0 * RAD;
@@ -166,16 +212,25 @@ pub fn calc_sunrise_and_set(utc: DateTime<Utc>, lat: f64, lon: f64)
 }
 
 
-// Solar position algorithm returns azimuth and zenith-angle
-//
-// utc: DateTime<Utc>
-// lat: latitude in degrees
-// lon: longitude in degrees
-//
-// Algorithm ported to Rust from http://www.psa.es/sdg/sunpos.htm
+/// Returning solar position (azimuth and zenith-angle) at time `t` and geo-pos `lat` and `lon`
+///
+/// # Arguments
+///
+/// * `utc` - UTC time-point (DateTime<Utc>)
+/// * `lat` - latitude in WGS84 system, ranging from -90.0 to 90.0.
+/// * `lon` - longitude in WGS84 system, ranging from -180.0 to 180.0
+///
+/// In case latitude or longitude are not in valid ranges, the function will return Err(BadParam).
+///
+/// Algorithm ported to Rust from http://www.psa.es/sdg/sunpos.htm
+/// The algorithm is accurate to within 0.5 minutes of arc for the year 1999 and following.
 pub fn calc_solar_position(utc: DateTime<Utc>, lat: f64, lon: f64)
                            -> Result<SolarPos, SpaError>
 {
+    if -90.0 > lat || 90.0 < lat || -180.0 > lon || 180.0 < lon {
+        return Err(SpaError::BadParam);
+    }
+
     let decimal_hours = (utc.hour() as f64) + ((utc.minute() as f64)
         + (utc.second() as f64) / 60.0) / 60.0;
 
@@ -426,5 +481,79 @@ mod tests {
 
         assert_eq!(exp_azimuth, solpos.azimuth);
         assert_eq!(exp_zenith_angle, solpos.zenith_angle);
+    }
+}
+
+/// # Benchmarks
+/// Execute the benchmarks entering command:
+/// ```commandline
+/// cargo bench --features benchmark
+/// ```
+#[cfg(all(feature = "benchmark", test))]
+mod benchmark {
+    extern crate chrono;
+    extern crate test;
+    use super::calc_sunrise_and_set;
+    use super::calc_solar_position;
+    use self::chrono::TimeZone;
+    use self::chrono::prelude::Utc;
+    use std::time::SystemTime;
+
+    #[bench]
+    fn bench_reference_read_systime(b: &mut test::Bencher) {
+        b.iter(|| {
+            // any random value, tp prevent the code is discarded by code-optimizer
+            let now: u64 = SystemTime::now()
+                .elapsed()
+                .unwrap()
+                .as_secs();
+
+            // return the value to prevent the code is marked as unused and discarded by optimizer
+            now
+        });
+    }
+
+    #[bench]
+    fn bench_calc_solar_position(b: &mut test::Bencher) {
+        b.iter(|| {
+            // test-vector from http://lexikon.astronomie.info/zeitgleichung/neu.html
+            let exp_azimuth = 195.51003782406534;
+            let exp_zenith_angle = 54.03653683638118;
+
+            let dt =
+                Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
+
+            // geo-pos near Frankfurt/Germany
+            let lat = 50.0;
+            let lon = 10.0;
+
+            let solpos
+            = calc_solar_position(dt, lat, lon).unwrap();
+
+            assert_eq!(exp_azimuth, solpos.azimuth);
+            assert_eq!(exp_zenith_angle, solpos.zenith_angle);
+
+            // return the value to prevent the code is marked as unused and discarded by optimizer
+            solpos
+        });
+    }
+
+    #[bench]
+    fn bench_calc_sunrise_and_set(b: &mut test::Bencher) {
+        b.iter(|| {
+            // test-vector from http://lexikon.astronomie.info/zeitgleichung/neu.html
+            let dt =
+                Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
+
+            // geo-pos near Frankfurt/Germany
+            let lat = 50.0;
+            let lon = 10.0;
+
+            let sunriseandset
+            = calc_sunrise_and_set(dt, lat, lon).unwrap();
+
+            // return the value to prevent the code is marked as unused and discarded by optimizer
+            sunriseandset
+        });
     }
 }
