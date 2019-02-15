@@ -84,8 +84,14 @@ Benchmarks have been created using the Bench-Framework of Rust. The Bench-Framew
 times and is calculating average time and variance.
 The following results illustrate the performance compared to a reference-function reading the system time only.
 The benchmarks have been performed using a Lenovo X230 with `Intel Core i5 3320M - 4 x 2,6Ghz` and Rust compiler version
-`rustc 1.22.0-nightly (7778906be 2017-10-14)` and Ubuntu 17.04 with kernel-4.10.0-38-generic
+`rustc 1.22.0-nightly (7778906be 2017-10-14)` and Ubuntu 17.04 with kernel-4.10.0-38-generic.
 
+Command:
+```
+cargo bench --features "benchmark"
+
+```
+Output:
 ```
 test benchmark::bench_calc_solar_position    ... bench:         557 ns/iter (+/- 10)
 test benchmark::bench_calc_sunrise_and_set   ... bench:         490 ns/iter (+/- 6)
