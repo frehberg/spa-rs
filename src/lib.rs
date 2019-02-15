@@ -13,6 +13,7 @@ extern crate chrono;
 
 use std::f64::consts::PI;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::error;
 use chrono::DateTime;
 use chrono::prelude::Utc;
 use chrono::TimeZone;
@@ -56,6 +57,16 @@ pub struct SolarPos {
 pub enum SpaError {
     BadParam,
 }
+
+impl std::fmt::Display for SpaError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            SpaError::BadParam => write!(f, "Latitude or longitude are not within valid ranges."),
+        }
+    }
+}
+
+impl error::Error for SpaError {}
 
 /// Converting DateTime<Utc> to Julian-Days (f64)
 ///
