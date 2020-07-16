@@ -48,9 +48,9 @@ pub enum SunriseAndSet {
 #[derive(Debug, Clone)]
 pub struct SolarPos {
     /// horizontal angle measured clockwise from a north base line or meridian
-    azimuth: f64,
+    pub azimuth: f64,
     /// the angle between the zenith and the centre of the sun's disc
-    zenith_angle: f64,
+    pub zenith_angle: f64,
 }
 
 /// The error conditions
