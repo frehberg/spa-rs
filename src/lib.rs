@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "benchmark", feature(test))]
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0>.
 // This file may not be copied, modified, or distributed
@@ -7,8 +6,6 @@
 //! Solar Position Algorithm module for Rust
 //!
 //! Collection of algorithms calculating sunrise/sunset and azimuth/zenith-angle.
-
-extern crate chrono;
 
 use chrono::prelude::Utc;
 use chrono::DateTime;
@@ -113,7 +110,7 @@ fn in_pi(x: f64) -> f64 {
     let n = (x / PI2) as i64;
     let result = x - (n as f64 * PI2);
     if result < 0.0 {
-        (result + PI2)
+        result + PI2
     } else {
         result
     }
@@ -321,10 +318,8 @@ pub fn calc_solar_position(utc: DateTime<Utc>, lat: f64, lon: f64) -> Result<Sol
 
 #[cfg(test)]
 mod tests {
-    extern crate chrono;
+    use chrono::{TimeZone,Timelike, Datelike, Utc};
 
-    use self::chrono::prelude::Utc;
-    use self::chrono::TimeZone;
     use super::berechne_zeitgleichung;
     use super::calc_solar_position;
     use super::calc_sunrise_and_set;
@@ -337,8 +332,6 @@ mod tests {
     use super::PI2;
     use std::f64::consts::FRAC_PI_2;
     use std::f64::consts::PI;
-    use tests::chrono::Datelike;
-    use tests::chrono::Timelike;
 
     const LAT_DEG: f64 = 48.1;
     const LON_DEG: f64 = 11.6;
@@ -484,73 +477,5 @@ mod tests {
 
         assert_eq!(exp_azimuth, solpos.azimuth);
         assert_eq!(exp_zenith_angle, solpos.zenith_angle);
-    }
-}
-
-/// # Benchmarks
-/// Execute the benchmarks entering command:
-/// ```commandline
-/// cargo bench --features benchmark
-/// ```
-#[cfg(all(feature = "benchmark", test))]
-mod benchmark {
-    extern crate chrono;
-    extern crate test;
-
-    use self::chrono::prelude::Utc;
-    use self::chrono::TimeZone;
-    use super::calc_solar_position;
-    use super::calc_sunrise_and_set;
-    use std::time::SystemTime;
-
-    #[bench]
-    fn bench_reference_read_systime(b: &mut test::Bencher) {
-        b.iter(|| {
-            // any random value, tp prevent the code is discarded by code-optimizer
-            let now: u64 = SystemTime::now().elapsed().unwrap().as_secs();
-
-            // return the value to prevent the code is marked as unused and discarded by optimizer
-            now
-        });
-    }
-
-    #[bench]
-    fn bench_calc_solar_position(b: &mut test::Bencher) {
-        b.iter(|| {
-            // test-vector from http://lexikon.astronomie.info/zeitgleichung/neu.html
-            let exp_azimuth = 195.51003782406534;
-            let exp_zenith_angle = 54.03653683638118;
-
-            let dt = Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
-
-            // geo-pos near Frankfurt/Germany
-            let lat = 50.0;
-            let lon = 10.0;
-
-            let solpos = calc_solar_position(dt, lat, lon).unwrap();
-
-            assert_eq!(exp_azimuth, solpos.azimuth);
-            assert_eq!(exp_zenith_angle, solpos.zenith_angle);
-
-            // return the value to prevent the code is marked as unused and discarded by optimizer
-            solpos
-        });
-    }
-
-    #[bench]
-    fn bench_calc_sunrise_and_set(b: &mut test::Bencher) {
-        b.iter(|| {
-            // test-vector from http://lexikon.astronomie.info/zeitgleichung/neu.html
-            let dt = Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
-
-            // geo-pos near Frankfurt/Germany
-            let lat = 50.0;
-            let lon = 10.0;
-
-            let sunriseandset = calc_sunrise_and_set(dt, lat, lon).unwrap();
-
-            // return the value to prevent the code is marked as unused and discarded by optimizer
-            sunriseandset
-        });
     }
 }
