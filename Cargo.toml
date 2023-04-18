@@ -11,4 +11,4 @@ homepage = "https://github.com/frehberg/spa-rs"
 repository = "https://github.com/frehberg/spa-rs"
 
 [dependencies]
-chrono = "^0.4"
+chrono = {version="^0.4", default-features=false, features=["clock"]}
