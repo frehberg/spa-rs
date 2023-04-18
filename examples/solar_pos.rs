@@ -7,7 +7,8 @@ use chrono::{TimeZone, Utc};
 use spa::{calc_solar_position, SolarPos};
 
 fn main() {
-    let dt = Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
+    let dt = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
+        .single().unwrap();
 
     // geo-pos near Frankfurt/Germany
     let lat = 50.0;

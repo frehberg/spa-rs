@@ -96,9 +96,8 @@ fn to_julian(utc: DateTime<Utc>) -> f64 {
 ///
 fn to_utc(jd: f64) -> DateTime<Utc> {
     let secs_since_epoch = (jd - 2440587.5) * 86400.0;
-    let secs = secs_since_epoch.trunc();
-    let nanos = (secs_since_epoch - secs) * (1000.0 * 1000.0 * 1000.0);
-    Utc.timestamp(secs as i64, nanos as u32)
+    let nanos = secs_since_epoch * (1000.0 * 1000.0 * 1000.0);
+    Utc.timestamp_nanos(nanos as i64)
 }
 
 /// Projecting value into range [0,..,PI]
@@ -345,8 +344,8 @@ mod tests {
 
     #[test]
     fn test_datetime() {
-        let unix_time_secs = 1128057420; // 2005-09-30T5:17:00Z
-        let utc = Utc.timestamp(unix_time_secs, 0);
+        let unix_time_secs: i64 = 1128057420; // 2005-09-30T5:17:00Z
+        let utc = Utc.timestamp_nanos(unix_time_secs * (1000 * 1000 * 1000));
 
         assert_eq!(utc.year(), 2005);
         assert_eq!(utc.month(), 9);
@@ -360,7 +359,8 @@ mod tests {
         // test-vector from https://de.wikipedia.org/wiki/Sonnenstand
 
         //  6. August 2006 um 6 Uhr ut
-        let dt = Utc.ymd(2006, 8, 6).and_hms(6, 0, 0);
+        let dt = Utc.with_ymd_and_hms(2006, 8, 6, 6, 0, 0)
+            .single().unwrap();
 
         let jd = to_julian(dt);
         assert_eq!(jd, 2453953.75);
@@ -379,7 +379,8 @@ mod tests {
         let exp_d_ra = 0.18539782794253773;
         let exp_dk = -0.05148602985190724;
 
-        let dt = Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
+        let dt = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
+            .single().unwrap();
 
         let jd = to_julian(dt);
         assert_eq!(exp_jd, jd);
@@ -398,7 +399,8 @@ mod tests {
     #[test]
     fn test_calc_sunrise_and_set() {
         // test-vector from http://lexikon.astronomie.info/zeitgleichung/neu.html
-        let dt = Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
+        let dt = Utc.with_ymd_and_hms(2005, 9, 30,12, 0, 0)
+            .single().unwrap();
 
         // geo-pos near Frankfurt/Germany
         let lat = 50.0;
@@ -428,7 +430,8 @@ mod tests {
     #[test]
     fn test_calc_sunrise_and_set_polarday() {
         // test-vector from http://lexikon.astronomie.info/zeitgleichung/neu.html
-        let dt = Utc.ymd(2005, 6, 30).and_hms(12, 0, 0);
+        let dt = Utc.with_ymd_and_hms(2005, 6, 30,12, 0, 0)
+            .single().unwrap();
 
         // geo-pos in northern polar region
         let lat = 67.4;
@@ -446,7 +449,8 @@ mod tests {
     #[test]
     fn test_calc_sunrise_and_set_polarnight() {
         // test-vector from http://lexikon.astronomie.info/zeitgleichung/neu.html
-        let dt = Utc.ymd(2005, 6, 30).and_hms(12, 0, 0);
+        let dt = Utc.with_ymd_and_hms(2005, 6, 30,12, 0, 0)
+            .single().unwrap();
 
         // geo-pos in southern polar region
         let lat = -68.0;
@@ -467,7 +471,8 @@ mod tests {
         let exp_azimuth = 195.51003782406534;
         let exp_zenith_angle = 54.03653683638118;
 
-        let dt = Utc.ymd(2005, 9, 30).and_hms(12, 0, 0);
+        let dt = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
+            .single().unwrap();
 
         // geo-pos near Frankfurt/Germany
         let lat = 50.0;
