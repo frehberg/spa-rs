@@ -16,7 +16,7 @@
 //!
 //! // main
 //! fn main() {
-//!     let datetime = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
+//!     let dt = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
 //!         .single().unwrap();
 //!
 //!     // geo-pos near Frankfurt/Germany
@@ -48,23 +48,7 @@ const JD2000: f64 = 2451545.0;
 
 /// platform specific floating operations
 ///
-/// For example implement as
-/// ```rust
-/// /// FloatOps type
-/// pub struct StdFloatOps;
-///
-/// /// FloatOps for the std environment, mapping directly onto f64 operations
-/// impl FloatOps for StdFloatOps {
-///     fn sin(x: f64) -> f64 { x.sin() }
-///     fn cos(x: f64) -> f64 { x.cos() }
-///     fn tan(x: f64) -> f64 { x.tan() }
-///     fn asin(x: f64) -> f64 { x.asin() }
-///     fn acos(x: f64) -> f64 { x.acos() }
-///     fn atan(x: f64) -> f64 { x.atan() }
-///     fn atan2(y: f64, x: f64) -> f64 { y.atan2(x) }
-///     fn trunc(x: f64) -> f64 { x.trunc() }
-/// }
-/// ```
+/// For `std` targets, you can use the provided [`StdFloatOps`]
 pub trait FloatOps {
     fn sin(x: f64) -> f64;
     fn cos(x: f64) -> f64;
