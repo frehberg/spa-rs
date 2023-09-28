@@ -62,7 +62,7 @@ pub trait FloatOps {
     fn trunc(x: f64) -> f64;
 }
 
-// FloatOps for the std environment, mapping directly onto f64 operations
+/// FloatOps for the std environment, mapping directly onto f64 operations
 #[cfg(any(feature = "std", test))]
 pub enum StdFloatOps {}
 #[cfg(any(feature = "std", test))]
