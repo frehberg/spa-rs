@@ -94,7 +94,6 @@ pub trait FloatOps {
     fn trunc(x: f64) -> f64;
 }
 
-
 /// The sun-rise and sun-set as UTC, otherwise permanent polar-night or polar-day
 #[derive(Debug, Clone)]
 pub enum SunriseAndSet {
@@ -189,7 +188,8 @@ fn in_pi(x: f64) -> f64 {
 /// * `t` - time according to standard equinox J2000.0
 ///
 fn eps(t: f64) -> f64 {
-    return RAD * (23.43929111 + ((-46.8150) * t - 0.00059 * t * t + 0.001813 * t * t * t) / 3600.0);
+    return RAD
+        * (23.43929111 + ((-46.8150) * t - 0.00059 * t * t + 0.001813 * t * t * t) / 3600.0);
 }
 
 /// Calculates equation of time, returning the tuple (delta-ascension, declination)
@@ -303,7 +303,11 @@ pub fn sunrise_and_set<F: FloatOps>(
 ///
 /// Algorithm ported to Rust from [http://www.psa.es/sdg/sunpos.htm](https://web.archive.org/web/20220308165815/http://www.psa.es/sdg/sunpos.htm)
 /// The algorithm is accurate to within 0.5 minutes of arc for the year 1999 and following.
-pub fn solar_position<F: FloatOps>(utc: DateTime<Utc>, lat: f64, lon: f64) -> Result<SolarPos, SpaError> {
+pub fn solar_position<F: FloatOps>(
+    utc: DateTime<Utc>,
+    lat: f64,
+    lon: f64,
+) -> Result<SolarPos, SpaError> {
     if -90.0 > lat || 90.0 < lat || -180.0 > lon || 180.0 < lon {
         return Err(SpaError::BadParam);
     }
@@ -384,16 +388,16 @@ pub fn solar_position<F: FloatOps>(utc: DateTime<Utc>, lat: f64, lon: f64) -> Re
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Timelike, Datelike, Utc};
+    use chrono::{Datelike, TimeZone, Timelike, Utc};
 
-    use super::FloatOps;
     use super::berechne_zeitgleichung;
-    use super::solar_position;
-    use super::sunrise_and_set;
     use super::eps;
     use super::in_pi;
+    use super::solar_position;
+    use super::sunrise_and_set;
     use super::to_julian;
     use super::to_utc;
+    use super::FloatOps;
     use super::SunriseAndSet;
     use super::JD2000;
     use super::PI2;
@@ -406,20 +410,35 @@ mod tests {
     const LAT_DEG: f64 = 48.1;
     const LON_DEG: f64 = 11.6;
 
-
     // FloatOps for the std environment
     pub struct StdFloatOps;
 
     // FloatOps for the std environment, mapping directly onto f64 operations
     impl FloatOps for StdFloatOps {
-        fn sin(x: f64) -> f64 { x.sin() }
-        fn cos(x: f64) -> f64 { x.cos() }
-        fn tan(x: f64) -> f64 { x.tan() }
-        fn asin(x: f64) -> f64 { x.asin() }
-        fn acos(x: f64) -> f64 { x.acos() }
-        fn atan(x: f64) -> f64 { x.atan() }
-        fn atan2(y: f64, x: f64) -> f64 { y.atan2(x) }
-        fn trunc(x: f64) -> f64 { x.trunc() }
+        fn sin(x: f64) -> f64 {
+            x.sin()
+        }
+        fn cos(x: f64) -> f64 {
+            x.cos()
+        }
+        fn tan(x: f64) -> f64 {
+            x.tan()
+        }
+        fn asin(x: f64) -> f64 {
+            x.asin()
+        }
+        fn acos(x: f64) -> f64 {
+            x.acos()
+        }
+        fn atan(x: f64) -> f64 {
+            x.atan()
+        }
+        fn atan2(y: f64, x: f64) -> f64 {
+            y.atan2(x)
+        }
+        fn trunc(x: f64) -> f64 {
+            x.trunc()
+        }
     }
 
     #[test]
@@ -444,10 +463,8 @@ mod tests {
     #[test]
     /// test-vector from [https://de.wikipedia.org/wiki/Sonnenstand](https://web.archive.org/web/20220712235611/https://de.wikipedia.org/wiki/Sonnenstand)
     fn test_julian_day() {
-
         //  6. August 2006 um 6 Uhr ut
-        let dt = Utc.with_ymd_and_hms(2006, 8, 6, 6, 0, 0)
-            .single().unwrap();
+        let dt = Utc.with_ymd_and_hms(2006, 8, 6, 6, 0, 0).single().unwrap();
 
         let jd = to_julian(dt);
         assert_eq!(jd, 2453953.75);
@@ -459,15 +476,16 @@ mod tests {
     #[test]
     /// test-vector from [http://lexikon.astronomie.info/zeitgleichung/neu.html](https://web.archive.org/web/20170812034800/http://lexikon.astronomie.info/zeitgleichung/neu.html)
     fn test_zeitgleichung() {
-
         let exp_jd = 2453644.0;
         let exp_t = 0.057467488021902803;
         let exp_e = 0.40907976105657956;
         let exp_d_ra = 0.18539782794253773;
         let exp_dk = -0.05148602985190724;
 
-        let dt = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
-            .single().unwrap();
+        let dt = Utc
+            .with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
+            .single()
+            .unwrap();
 
         let jd = to_julian(dt);
         assert_eq!(exp_jd, jd);
@@ -486,9 +504,10 @@ mod tests {
     #[test]
     /// test-vector from [http://lexikon.astronomie.info/zeitgleichung/neu.html](https://web.archive.org/web/20170812034800/http://lexikon.astronomie.info/zeitgleichung/neu.html)
     fn test_sunrise_and_set() {
-
-        let dt = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
-            .single().unwrap();
+        let dt = Utc
+            .with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
+            .single()
+            .unwrap();
 
         // geo-pos near Frankfurt/Germany
         let lat = 50.0;
@@ -518,8 +537,10 @@ mod tests {
     #[test]
     /// test-vector from [http://lexikon.astronomie.info/zeitgleichung/neu.html](https://web.archive.org/web/20170812034800/http://lexikon.astronomie.info/zeitgleichung/neu.html)
     fn test_sunrise_and_set_polarday() {
-        let dt = Utc.with_ymd_and_hms(2005, 6, 30, 12, 0, 0)
-            .single().unwrap();
+        let dt = Utc
+            .with_ymd_and_hms(2005, 6, 30, 12, 0, 0)
+            .single()
+            .unwrap();
 
         // geo-pos in northern polar region
         let lat = 67.4;
@@ -537,8 +558,10 @@ mod tests {
     #[test]
     /// test-vector from [http://lexikon.astronomie.info/zeitgleichung/neu.html](https://web.archive.org/web/20170812034800/http://lexikon.astronomie.info/zeitgleichung/neu.html)
     fn test_sunrise_and_set_polarnight() {
-        let dt = Utc.with_ymd_and_hms(2005, 6, 30, 12, 0, 0)
-            .single().unwrap();
+        let dt = Utc
+            .with_ymd_and_hms(2005, 6, 30, 12, 0, 0)
+            .single()
+            .unwrap();
 
         // geo-pos in southern polar region
         let lat = -68.0;
@@ -559,8 +582,10 @@ mod tests {
         let exp_azimuth = 195.51003782406534;
         let exp_zenith_angle = 54.03653683638118;
 
-        let dt = Utc.with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
-            .single().unwrap();
+        let dt = Utc
+            .with_ymd_and_hms(2005, 9, 30, 12, 0, 0)
+            .single()
+            .unwrap();
 
         // geo-pos near Frankfurt/Germany
         let lat = 50.0;
