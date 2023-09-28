@@ -6,29 +6,13 @@
 //! Solar Position Algorithm module for Rust
 //!
 //! Collection of algorithms calculating sunrise/sunset and azimuth/zenith-angle.
-//! The SPA library supports `std` and `no_std` build targets. The platform specific floating operations
-//! are to be defined as trait impl `FloatOps`, the example below illustrates the usage for the `std` target build.
+//!
+//! The SPA library supports `std` and `no_std` build targets. The following
+//! example uses the built-in implementation `StdFloatOps` for `std` build targets.
 //!
 //! ```rust
-//!
 //! use chrono::{TimeZone, Utc};
-//! use spa::{solar_position, sunrise_and_set, SolarPos, FloatOps, SunriseAndSet};
-//!
-//!
-//! // FloatOps for the std environment
-//! pub struct StdFloatOps;
-//!
-//! // FloatOps for the std environment, mapping directly onto f64 operations
-//! impl FloatOps for StdFloatOps {
-//!     fn sin(x: f64) -> f64 { x.sin() }
-//!     fn cos(x: f64) -> f64 { x.cos() }
-//!     fn tan(x: f64) -> f64 { x.tan() }
-//!     fn asin(x: f64) -> f64 { x.asin() }
-//!     fn acos(x: f64) -> f64 { x.acos() }
-//!     fn atan(x: f64) -> f64 { x.atan() }
-//!     fn atan2(y: f64, x: f64) -> f64 { y.atan2(x) }
-//!     fn trunc(x: f64) -> f64 { x.trunc() }
-//! }
+//! use spa::{solar_position, sunrise_and_set, SolarPos, StdFloatOps, SunriseAndSet};
 //!
 //! // main
 //! fn main() {
@@ -46,7 +30,7 @@
 //! }
 //! ```
 
-#![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(any(feature = "std", test)), no_std)]
 
 use chrono::prelude::Utc;
 use chrono::DateTime;
@@ -94,6 +78,37 @@ pub trait FloatOps {
     fn trunc(x: f64) -> f64;
 }
 
+// FloatOps for the std environment, mapping directly onto f64 operations
+#[cfg(any(feature = "std", test))]
+pub enum StdFloatOps {}
+#[cfg(any(feature = "std", test))]
+impl FloatOps for StdFloatOps {
+    fn sin(x: f64) -> f64 {
+        f64::sin(x)
+    }
+    fn cos(x: f64) -> f64 {
+        x.cos()
+    }
+    fn tan(x: f64) -> f64 {
+        x.tan()
+    }
+    fn asin(x: f64) -> f64 {
+        x.asin()
+    }
+    fn acos(x: f64) -> f64 {
+        x.acos()
+    }
+    fn atan(x: f64) -> f64 {
+        x.atan()
+    }
+    fn atan2(y: f64, x: f64) -> f64 {
+        y.atan2(x)
+    }
+    fn trunc(x: f64) -> f64 {
+        x.trunc()
+    }
+}
+
 /// The sun-rise and sun-set as UTC, otherwise permanent polar-night or polar-day
 #[derive(Debug, Clone)]
 pub enum SunriseAndSet {
@@ -122,18 +137,26 @@ pub struct SolarPos {
 }
 
 /// The error conditions
+#[cfg(not(any(feature = "std", test)))]
 #[derive(Debug, Clone)]
 pub enum SpaError {
     BadParam,
 }
-
 /// Displaying SpaError, enabling error message on console
+#[cfg(not(any(feature = "std", test)))]
 impl core::fmt::Display for SpaError {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         match *self {
             SpaError::BadParam => write!(f, "Latitude or longitude are not within valid ranges."),
         }
     }
+}
+
+#[cfg(any(feature = "std", test))]
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum SpaError {
+    #[error("Latitude or longitude are not within valid ranges.")]
+    BadParam,
 }
 
 /// Converting DateTime<Utc> to Julian-Days (f64)
@@ -397,49 +420,15 @@ mod tests {
     use super::sunrise_and_set;
     use super::to_julian;
     use super::to_utc;
-    use super::FloatOps;
+    use super::StdFloatOps;
     use super::SunriseAndSet;
     use super::JD2000;
     use super::PI2;
     use core::f64::consts::FRAC_PI_2;
     use core::f64::consts::PI;
 
-    // for testing bind the `std` library
-    extern crate std;
-
     const LAT_DEG: f64 = 48.1;
     const LON_DEG: f64 = 11.6;
-
-    // FloatOps for the std environment
-    pub struct StdFloatOps;
-
-    // FloatOps for the std environment, mapping directly onto f64 operations
-    impl FloatOps for StdFloatOps {
-        fn sin(x: f64) -> f64 {
-            x.sin()
-        }
-        fn cos(x: f64) -> f64 {
-            x.cos()
-        }
-        fn tan(x: f64) -> f64 {
-            x.tan()
-        }
-        fn asin(x: f64) -> f64 {
-            x.asin()
-        }
-        fn acos(x: f64) -> f64 {
-            x.acos()
-        }
-        fn atan(x: f64) -> f64 {
-            x.atan()
-        }
-        fn atan2(y: f64, x: f64) -> f64 {
-            y.atan2(x)
-        }
-        fn trunc(x: f64) -> f64 {
-            x.trunc()
-        }
-    }
 
     #[test]
     fn test_pi() {

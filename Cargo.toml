@@ -11,5 +11,13 @@ documentation = "https://docs.rs/spa/"
 homepage = "https://github.com/frehberg/spa-rs"
 repository = "https://github.com/frehberg/spa-rs"
 
+[features]
+default = []
+std = ["thiserror"]
+
 [dependencies]
 chrono = { version = "^0.4", default-features = false }
+thiserror = { version = "1.0.49", optional = true }
+
+[dev-dependencies]
+thiserror = "1.0.49"
