@@ -136,6 +136,7 @@ impl core::fmt::Display for SpaError {
     }
 }
 
+/// The error conditions
 #[cfg(any(feature = "std", test))]
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum SpaError {
