@@ -106,3 +106,44 @@ The `default-features = false` option must be specified in a dependency declarat
 [dependencies]
 spa = { version = "^0.5", default-features = false }
 ```
+
+## Migrating from SPA v0.3 to SPA v0.5 and later
+
+The version SPA 0.4 introduced the `std`/`no_std` abstraction `FloatOps` and functions have been renamed following Rust naming conventions.
+
+| SPA v0.3              | SPA v0.5                       |
+|-----------------------|--------------------------------|
+|  `calc_sunrise_and_set` | `sunrise_and_set::<FloatOps>` |
+|  `calc_solar_position`  | `solar_position::<FloatOps>` |
+
+The version 0.5 defined the `std` implemenation `StdFloatOps` for `FloatOps`, and introduced dependency to crate `thiserror` for `std` targets.
+
+Now, migrating `std` code from SPA v0.3 to SPA v0.5 is done, performing a renaming simply:   
+
+Sample code using SPA v0.3
+``` 
+...
+use spa::{calc_sunrise_and_set, calc_solar_position, SolarPos, SunriseAndSet, SpaError};
+
+fn position(dt: DateTime<Utc>, lat: f64, lon: f64) -> Result<SolarPos, SpaError>  {
+    calc_solar_position(dt, lat, lon)
+}
+
+fn rise_and_set(dt: DateTime<Utc>, lat: f64, lon: f64) -> Result<SunriseAndSet, SpaError>  {
+    calc_sunrise_and_set(dt, lat, lon)
+}
+``` 
+
+Sample code using SPA v0.5
+``` 
+...
+use spa::{sunrise_and_set, solar_position, SolarPos, SunriseAndSet, SpaError, StdFloatOps};
+
+fn position(dt: DateTime<Utc>, lat: f64, lon: f64) -> Result<SolarPos, SpaError>  {
+    solar_position::<StdFloatOps>(dt, lat, lon)
+}
+
+fn rise_and_set(dt: DateTime<Utc>, lat: f64, lon: f64) -> Result<SunriseAndSet, SpaError>  {
+    sunrise_and_set::<StdFloatOps>(dt, lat, lon)
+}
+``` 
