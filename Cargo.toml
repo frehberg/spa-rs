@@ -1,6 +1,6 @@
 [package]
 name = "spa"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Frank Rehberger <frehberg@gmail.com>"]
 description = "The Solar Position Algorithm module (SPA) for Rust calculates the sunrise-sunset and azimuth and zenith-angle for specific geo-position and time (UTC); for example for solar-panel-alignment or automotive."
 license = "Apache-2.0"
@@ -17,7 +17,7 @@ std = ["thiserror"]
 
 [dependencies]
 chrono = { version = "^0.4", default-features = false }
-thiserror = { version = "1.0.49", optional = true }
+thiserror = { version = "1", optional = true }
 
 [dev-dependencies]
-thiserror = "1.0.49"
+thiserror = "1"
