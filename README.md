@@ -93,7 +93,16 @@ pub trait FloatOps {
 }
 ```
 
-- On `std` target builds, the built-in implementation `StdFloatOps` is provided
+- On `std` target builds (default), the built-in implementation `StdFloatOps` is provided
 for your convenience, gated behind the `std` feature.
+```toml
+[dependencies]
+spa = "^0.5"
+```
 - On `no_std` target builds, you need to provide your own implementation for
 floating point operations, for example using [libm](https://docs.rs/libm/0.2.7/libm/).
+The `default-features = false` option must be specified in a dependency declaration.
+```toml
+[dependencies]
+spa = { version = "^0.5", default-features = false }
+```

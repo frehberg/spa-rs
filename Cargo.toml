@@ -12,7 +12,7 @@ homepage = "https://github.com/frehberg/spa-rs"
 repository = "https://github.com/frehberg/spa-rs"
 
 [features]
-default = []
+default = ["std"]
 std = ["thiserror"]
 
 [dependencies]
