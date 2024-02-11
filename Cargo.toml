@@ -5,13 +5,19 @@ authors = ["Frank Rehberger <frehberg@gmail.com>"]
 description = "The Solar Position Algorithm module (SPA) for Rust calculates the sunrise-sunset and azimuth and zenith-angle for specific geo-position and time (UTC); for example for solar-panel-alignment or automotive."
 license = "Apache-2.0"
 edition = '2021'
-keywords = ["solar", "algorithm" , "azimuth", "zenith", "sunrise"]
+keywords = ["solar", "algorithm", "azimuth", "zenith", "sunrise"]
 
 documentation = "https://docs.rs/spa/"
 homepage = "https://github.com/frehberg/spa-rs"
 repository = "https://github.com/frehberg/spa-rs"
 
+[features]
+default = []
+std = ["thiserror"]
+
 [dependencies]
-chrono = {version="^0.4", default-features=false}
+chrono = { version = "^0.4", default-features = false }
+thiserror = { version = "1.0.49", optional = true }
 
-
+[dev-dependencies]
+thiserror = "1.0.49"
